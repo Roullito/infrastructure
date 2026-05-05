@@ -25,6 +25,7 @@ on:
       SCW_DEFAULT_PROJECT_ID: { required: true }
       SCW_ORGANIZATION_ID: { required: true }
       AGE_PRIVATE_KEY: { required: true }
+      SOPS_AGE_KEY: { required: true }
 
 permissions:
   contents: read
@@ -81,6 +82,27 @@ jobs:
           /usr/local/bin/age --version || true
           echo "::endgroup::"
 
+      - name: Install SOPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::group::Install SOPS (latest)"
+
+          # Fetch the last version using the /releases/latest redirection
+          version="$(curl -fsSLI -o /dev/null -w '%{url_effective}' -L https://github.com/getsops/sops/releases/latest \
+                     | sed --regexp-extended 's#.*/tag/v([^/]+)$#\1#')"
+          echo "Latest sops version: $version"
+
+          url="https://github.com/getsops/sops/releases/download/v${version}/sops-v${version}.linux.amd64"
+          tmp="$(mktemp -d)"
+          curl -fsSL -o "$tmp/sops" "$url"
+
+          sudo install -m 0755 "$tmp/sops" /usr/local/bin/sops
+
+          # Check installation is OK
+          /usr/local/bin/sops --version || true
+          echo "::endgroup::"
+
       - name: Populating env vars
         shell: bash
         run: |
@@ -116,6 +138,8 @@ jobs:
       - name: Terraform plan
         if: ${{ success() && !inputs.apply }}
         working-directory: ${{ env.MODULE_PATH }}
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
           set -euo pipefail
           umask 077

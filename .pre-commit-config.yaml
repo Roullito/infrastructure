@@ -43,3 +43,12 @@ repos:
     hooks:
       - id: gitleaks
         name: Detect secrets using Gitleaks
+
+  - repo: local
+    hooks:
+      - id: ensure-sops-encrypted
+        name: Ensure secrets.enc.yaml files are SOPS-encrypted
+        entry: scripts/pre-commit/ensure-sops-encrypted.sh
+        language: script
+        files: '(^|/)secrets\.enc\.ya?ml$'
+        stages: [pre-commit]

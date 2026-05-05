@@ -1,0 +1,18 @@
+# SOPS configuration — see infrastructure/SOPS.md
+#
+# Recipients are AGE public keys. Each user and the CI runner own a distinct private key.
+# Adding/removing a recipient requires running `make sops-rotate-keys` to re-wrap the data key
+# on every encrypted file.
+
+keys:
+  - &ci  age1q9qyhryg9zmwywfy92468knc2n5zr2j66e73kw5mzc28fs6m5u4qpazpma
+  - &leo age1q2w07qws7tw5fhcsnxr33z6588exfnu2dpnsqhhqlvyxc0jf750qgrwv5t
+
+creation_rules:
+  # Default rule: every user + CI can decrypt.
+  # Add a more specific rule *above* this one to restrict a given module.
+  - path_regex: (^|/)secrets\.enc\.yaml$
+    key_groups:
+      - age:
+          - *ci
+          - *leo
